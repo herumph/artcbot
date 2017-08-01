@@ -6,10 +6,11 @@ Moose League is a summer "track" series, of varying distances, put on from May u
 Here's a link to the ARTC wiki: https://www.reddit.com/artc/wiki/index
 !rules
 **RULES OF THE SUBREDDIT**\n\n 1. No memes as posts. Comments are fine.\n\n 2. Personal blogs must be text posts with a short snippet of information in the body of the post.\n\n 3. All injury posts must be within the weekly threads. Do not post asking for medical diagnoses.\n\n 4. Please do not post to sell merchandise.\n\n 5. Do not post results in the title of a post.
-!help
-Hey! I'm ARTCbot, my commands are:\n\n!moose - To learn how the moose became our mascot.\n\n!rules - To list the rules of the subreddit.\n\n!artc - To learn about the formation of ARTC and what it means.\n\n!wiki - For a link to the wiki of the subreddit.\n\n!bookclub - To see the current book being read by the book club.\n\n!mooseleague - For the origin of Moose League and to see if there is a current race.
 !bookclub
 The book of the month for August is Peak Performance by Steve Magness
 !artc
 The meaning of ARTC will be decided by a community vote soon. [Here is the suggestion thread](https://www.reddit.com/r/artc/comments/6qaajw/whats_in_a_name_artc_definition_proposal/)
-
+!trainingquestion
+**Submitting a training question?** Great! In order for the ARTC community to better assist you please include:\n\n* Age\n* Sex\n* Current miles/week + easy pace\n* Previous peak miles/week\n* Workouts you traditionally or recently have completed\n* Goals (including specific races)\n* Previous PRs\n* Other things you think might be helpful to include
+!help
+Hey! I'm ARTCbot, my commands are:\n\n!moose - To learn how the moose became our mascot.\n\n!rules - To list the rules of the subreddit.\n\n!artc - To learn about the formation of ARTC and what it means.\n\n!wiki - For a link to the wiki of the subreddit.\n\n!bookclub - To see the current book being read by the book club.\n\n!mooseleague - For the origin of Moose League and to see if there is a current race.\n\n!trainingquestion - Recommended information to preface a training question. 

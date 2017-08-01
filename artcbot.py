@@ -106,7 +106,7 @@ for comment in subreddit_comments:
 		#Doing fancy shit to make the commands work
 		new_command = r'\n'.join(map(str, new_command))
 		#Making sure the command exists
-		if("!"+new_command not in command_list):
+		if("!"+edit_command not in command_list):
 			comment.reply("That command does not exist. Try !add instead.")
 			break
 		#Actually replacing the command
