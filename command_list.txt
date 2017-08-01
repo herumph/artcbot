@@ -1,0 +1,15 @@
+!moose
+It started as a joke, when Tweeeked commented that the rabbit upvote button looked like a moose. In retaliation, CatzerzMcGee made the downvote button a moose. The moose as representative of ARTC caught on, and when logos were being brainstormed for our first singlet the moose rose to the top.
+!mooseleague
+Moose League is a summer "track" series, of varying distances, put on from May until August by herumph and shortshortstallsocks.\n\n For the results of Moose League visit www.mooseleague.com\n\n For information on how the series started: https://www.reddit.com/r/AdvancedRunning/comments/66rm0w/ar_summer_track_series/
+!wiki
+Here's a link to the ARTC wiki: https://www.reddit.com/artc/wiki/index
+!rules
+**RULES OF THE SUBREDDIT**\n\n 1. No memes as posts. Comments are fine.\n\n 2. Personal blogs must be text posts with a short snippet of information in the body of the post.\n\n 3. All injury posts must be within the weekly threads. Do not post asking for medical diagnoses.\n\n 4. Please do not post to sell merchandise.\n\n 5. Do not post results in the title of a post.
+!help
+Hey! I'm ARTCbot, my commands are:\n\n!moose - To learn how the moose became our mascot.\n\n!rules - To list the rules of the subreddit.\n\n!artc - To learn about the formation of ARTC and what it means.\n\n!wiki - For a link to the wiki of the subreddit.\n\n!bookclub - To see the current book being read by the book club.\n\n!mooseleague - For the origin of Moose League and to see if there is a current race.
+!bookclub
+The book of the month for August is Peak Performance by Steve Magness
+!artc
+The meaning of ARTC will be decided by a community vote soon. [Here is the suggestion thread](https://www.reddit.com/r/artc/comments/6qaajw/whats_in_a_name_artc_definition_proposal/)
+
