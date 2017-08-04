@@ -2,7 +2,7 @@
 
 #ARTCbot. Responds to ! commands 
 #To do list:
-#1 - Update help command to include user who last editted a command. 
+#1 - Update help command to include user who last editted a command?
 #2 - Calendar integration? !upcoming <user> and !upcoming 
 
 import praw
@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from math import exp
 
 #Reddit stuff
-r = praw.Reddit("ARTCbot 1.2 by herumph")
+r = praw.Reddit("ARTCbot 1.2.1 by herumph")
 r.login(REDDIT_USERNAME, REDDIT_PASS)
 #subreddit = r.get_subreddit("RumphyBot")
 subreddit = r.get_subreddit("artc")
@@ -117,8 +117,8 @@ def convert(time, distance, unit,inputs, string):
     return message 
 
 #Sorting through comments and replying
-reply=""
 for comment in subreddit_comments:
+    reply=""
     if(comment.id not in already_done and str(comment.author) != "artcbot"):
         already_done.append(comment.id)
         #Making sure the already_done file doesn't get too big. 
