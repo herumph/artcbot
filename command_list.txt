@@ -1,7 +1,3 @@
-!moose
-It started as a joke, when Tweeeked commented that the rabbit upvote button looked like a moose. In retaliation, CatzerzMcGee made the downvote button a moose. The moose as representative of ARTC caught on, and when logos were being brainstormed for our first singlet the moose rose to the top.
-!mooseleague
-Moose League is a summer "track" series, of varying distances, put on from May until August by herumph and shortshortstallsocks.\n\n For the results of Moose League visit www.mooseleague.com\n\n For information on how the series started: https://www.reddit.com/r/AdvancedRunning/comments/66rm0w/ar_summer_track_series/
 !wiki
 Here's a link to the ARTC wiki: https://www.reddit.com/artc/wiki/index
 !rules
@@ -12,5 +8,11 @@ The book of the month for August is Peak Performance by Steve Magness
 The meaning of ARTC will be decided by a community vote soon. [Here is the suggestion thread](https://www.reddit.com/r/artc/comments/6qaajw/whats_in_a_name_artc_definition_proposal/)
 !trainingquestion
 **Submitting a training question?** Great! In order for the ARTC community to better assist you please include:\n\n* Age\n* Sex\n* Current miles/week + easy pace\n* Previous peak miles/week\n* Workouts you traditionally or recently have completed\n* Goals (including specific races)\n* Previous PRs\n* Other things you think might be helpful to include
+!mooseleague
+The next Moose League race is a 3k on August 19th. Announcement thread [here](https://redd.it/6qaf0m). 
 !help
-Hey! I'm ARTCbot, my commands are:\n\n!moose - To learn how the moose became our mascot.\n\n!rules - To list the rules of the subreddit.\n\n!artc - To learn about the formation of ARTC and what it means.\n\n!wiki - For a link to the wiki of the subreddit.\n\n!bookclub - To see the current book being read by the book club.\n\n!mooseleague - For the origin of Moose League and to see if there is a current race.\n\n!trainingquestion - Recommended information to preface a training question. 
+Hey! I'm ARTCbot, my functions are:\n\n!pacing - Get per mile and per kilometer pacing for any distance and goal time. Example, `!pacing 19:59 5 km` `!pacing 2:00:25 26.2 miles` (note the spaces between each input).\n\n!planner - Get a starting date for a training plan by inputting the goal race date and number of weeks to train. `!planner 12/02/17 18`\n\n!convertdistance - Convert between miles and kilometers, and vise versa. `!convertdistance 5 km` `!convertdistance 3.1 miles`\n\n!convertpace - Convert between paces in min/mile and min/km, and vise versa. `!convertpace 4:00 km` `!convertpace 6:00 mile`\n\n!splits - Get 400 meter splits for a kilometer or mile time. `!splits 4:00 km` `!splits 6:00 mile`\n\n!vdot - Get a VDOT number for a race performance. `!vdot 19:59 5 km` `!vdot 2:00:25 26.2 miles`
+!moose
+It started as a joke, when Tweeeked commented that the rabbit upvote button looked like a moose. In retaliation, CatzerzMcGee made the downvote button a moose. The moose as representative of ARTC caught on, and when logos were being brainstormed for our first singlet the moose rose to the top.
+!github
+ARTCbot is open source and all suggestions/comments are welcome. Visit www.github.com/herumph/artcbot to see how the bot functions. 
