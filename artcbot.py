@@ -2,8 +2,7 @@
 
 #ARTCbot. Responds to ! commands 
 #To do list:
-#1 - Update help command to include user who last editted a command?
-#2 - Calendar integration? !upcoming <user> and !upcoming 
+#1 - Calendar integration? !upcoming <user> and !upcoming 
 
 import praw
 from config_bot import *
@@ -12,10 +11,10 @@ from datetime import datetime, timedelta
 from math import exp
 
 #Reddit stuff
-r = praw.Reddit("ARTCbot 1.2.1 by herumph")
+r = praw.Reddit("ARTCbot 1.2.2 by herumph")
 r.login(REDDIT_USERNAME, REDDIT_PASS)
-#subreddit = r.get_subreddit("RumphyBot")
-subreddit = r.get_subreddit("artc")
+subreddit = r.get_subreddit("RumphyBot")
+#subreddit = r.get_subreddit("artc")
 subreddit_comments = subreddit.get_comments()
 
 #Functions to read and write files into arrays.
@@ -38,6 +37,7 @@ def get_time(submission):
 #Fetching arrays
 already_done = get_array("already_done")
 command_list = get_array("command_list")
+last_edit = get_array("last_edit")
 #Defining built in commands
 built_in = ["add","edit","delete","vdot","planner","pacing","splits","convertpace","convertdistance"]
 
@@ -156,7 +156,9 @@ for comment in subreddit_comments:
             #Actually adding the command
             command_list.append("!"+add_command)
             command_list.append(new_command)
+            last_edit.append(str(comment.author))
             write_out('command_list',command_list)
+            write_out('last_edit',last_edit)
             comment.reply("Successfully added !"+add_command+"\n\n The new response is:\n\n"+temp)
             break
 
@@ -171,7 +173,9 @@ for comment in subreddit_comments:
             #Actually deleting command
             del command_list[command_index]
             del command_list[command_index]
+            del last_edit[int(command_index/2)]
             write_out('command_list',command_list)
+            write_out('last_edit',last_edit)
             comment.reply("Successfully deleted !"+delete_command)
             break
 
@@ -200,9 +204,12 @@ for comment in subreddit_comments:
             #Easier to delete both old command and response and append the new ones
             del command_list[command_index]
             del command_list[command_index]
+            del last_edit[int(command_index/2)]
             command_list.append("!"+edit_command)
             command_list.append(new_command)
+            last_edit.append(str(comment.author))
             write_out('command_list',command_list)
+            write_out('last_edit',last_edit)
             comment.reply("Successfully edited !"+edit_command+"\n\n The new response is:\n\n"+temp)
             break
 
@@ -226,13 +233,13 @@ for comment in subreddit_comments:
             index = command_list.index("!help")
             #Having to convert back from raw string
             reply = codecs.decode(command_list[index+1], 'unicode_escape')
-            reply += "\n\n **Community made commands and quick links are:** \n\n"
+            reply += "\n\n **Community made commands and quick links are (user who edited the command in parentheses):** \n\n"
             for i in range(0,len(command_list)-1,2):
                 if(i != index and i < len(command_list)-2):
-                    reply += command_list[i]+", "
+                    reply += command_list[i]+" ("+last_edit[int(i/2)]+"), "
                 elif(i != index):
-                    reply += command_list[i]
-            reply += "\n\nI can reply to multiple commands at a time, so don't be picky."
+                    reply += command_list[i]+" ("+last_edit[int(i/2)]+")"
+            reply += "\n\n**I can reply to multiple commands at a time, so don't be picky.**"
             comment.reply(reply)
             break
 
