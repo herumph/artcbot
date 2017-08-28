@@ -7,3 +7,5 @@ made by /u/herumph
 PM me on reddit with any questions
 
 Open source. 
+
+Requirements: praw 3.6.0, python3
