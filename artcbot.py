@@ -1,4 +1,4 @@
-#!/Users/sfdavis/anaconda3/bin/python
+#!/usr/bin/python3
 
 #ARTCbot. Responds to ! commands 
 #To do list:
@@ -11,11 +11,16 @@ from datetime import datetime, timedelta
 from math import exp
 
 #Reddit stuff
-r = praw.Reddit("ARTCbot 1.2.2 by herumph")
-r.login(REDDIT_USERNAME, REDDIT_PASS)
-subreddit = r.get_subreddit("RumphyBot")
-#subreddit = r.get_subreddit("artc")
-subreddit_comments = subreddit.get_comments()
+r = praw.Reddit(user_agent = "ARTCbot 1.2.2 by herumph",
+        client_id = ID,
+        client_secret = SECRET,
+        username = REDDIT_USERNAME,
+        password = REDDIT_PASS)
+
+sub = "artc"
+#sub = "rumphybot"
+subreddit = r.subreddit(sub)
+#subreddit_comments = subreddit.get_comments()
 
 #Functions to read and write files into arrays.
 def get_array(input_string):
@@ -41,11 +46,9 @@ last_edit = get_array("last_edit")
 #Defining built in commands
 built_in = ["add","edit","delete","vdot","planner","pacing","splits","convertpace","convertdistance"]
 
-print("\n * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * \n")
-
 #Getting subreddit contributors
 contributors=[]
-for contributor in subreddit.get_contributors():
+for contributor in r.subreddit(sub).contributor():
     contributors.append(str(contributor))
 
 #Time formatting function. Time given in minutes as a float.
@@ -117,7 +120,7 @@ def convert(time, distance, unit,inputs, string):
     return message 
 
 #Sorting through comments and replying
-for comment in subreddit_comments:
+for comment in r.subreddit(sub).comments(limit=25):
     reply=""
     if(comment.id not in already_done and str(comment.author) != "artcbot"):
         already_done.append(comment.id)

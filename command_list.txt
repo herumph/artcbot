@@ -1,5 +1,5 @@
 !wiki
-Here's a link to the ARTC wiki: https://www.reddit.com/r/artc/wiki/index
+Here's a link to the ARTC wiki: https://www.reddit.com/artc/wiki/index
 !rules
 **RULES OF THE SUBREDDIT**\n\n 1. No memes as posts. Comments are fine.\n\n 2. Personal blogs must be text posts with a short snippet of information in the body of the post.\n\n 3. All injury posts must be within the weekly threads. Do not post asking for medical diagnoses.\n\n 4. Please do not post to sell merchandise.\n\n 5. Do not post results in the title of a post.
 !bookclub
@@ -16,3 +16,5 @@ Hey! I'm ARTCbot, my functions are:\n\n!pacing - Get per mile and per kilometer 
 It started as a joke, when Tweeeked commented that the rabbit upvote button looked like a moose. In retaliation, CatzerzMcGee made the downvote button a moose. The moose as representative of ARTC caught on, and when logos were being brainstormed for our first singlet the moose rose to the top.
 !github
 ARTCbot is open source and all suggestions/comments are welcome. Visit www.github.com/herumph/artcbot to see how the bot functions. 
+!filmclub
+The movie for the month is *Icarus* ([IMDb page](http://www.imdb.com/title/tt6333060/), available on [Netflix](https://www.netflix.com/title/80168079)). \n\nThe discussion thread will be posted on (or around) September 15th. \n\nAnnouncement and future movie suggestion thread [here](https://www.reddit.com/r/artc/comments/6ui21w/introducing_the_artc_film_club/). 
