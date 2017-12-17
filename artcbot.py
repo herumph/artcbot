@@ -237,8 +237,8 @@ def trainingpaces(v_dot):
 
 #Returning a reddit formatted table for an input vdot
 def pace_table(input_array, input_string, v_dot, source):
+    reply = ""
     for i in range(0,len(input_array)-1,1):
-        reply = ""
         #it was being weird so now I have weird conditionals to make it work
         if(float(input_array[i][0]) == v_dot):
             reply = make_table(input_array, input_string, source, i)
