@@ -1,55 +1,59 @@
-#!/usr/bin/python3
-
 #ARTCbot. Responds to ! commands 
 #To do list:
-#1 - Calendar integration? !upcoming <user> and !upcoming 
+#1 - Calendar integration? !upcoming <user> and !upcoming
+#2 - PM integration for everything
+#3 - Paces from other places. BT, etc. 
 
-import praw
-from config_bot import *
 import codecs
 from datetime import datetime, timedelta
 from math import exp
 
-#Reddit stuff
-r = praw.Reddit(user_agent = "ARTCbot 1.2.2 by herumph",
-        client_id = ID,
-        client_secret = SECRET,
-        username = REDDIT_USERNAME,
-        password = REDDIT_PASS)
-
-sub = "artc"
-#sub = "rumphybot"
-subreddit = r.subreddit(sub)
-#subreddit_comments = subreddit.get_comments()
-
 #Functions to read and write files into arrays.
 def get_array(input_string):
-    with open(input_string+".txt","r") as f:
+    with open("textfiles/"+input_string+".txt","r") as f:
         input_array = f.readlines()
     input_array = [x.strip("\n") for x in input_array]
     return(input_array)
 
 def write_out(input_string,input_array):
-    with open(input_string+".txt","w") as f:
+    with open("textfiles/"+input_string+".txt","w") as f:
         for i in input_array:
             f.write(i+"\n")
     return
-    
-def get_time(submission):
-    time = submission.created
-    return datetime.fromtimestamp(time)
 
 #Fetching arrays
-already_done = get_array("already_done")
 command_list = get_array("command_list")
-last_edit = get_array("last_edit")
+jd_paces = get_array("jd_paces")
+pf_paces = get_array("pf_paces")
+han_paces = get_array("han_paces")
 #Defining built in commands
-built_in = ["add","edit","delete","vdot","planner","pacing","splits","convertpace","convertdistance"]
+built_in = ["add","edit","delete","vdot","planner","pacing","splits","convertpace","convertdistance","trainingpaces"]
 
-#Getting subreddit contributors
-contributors=[]
-for contributor in r.subreddit(sub).contributor():
-    contributors.append(str(contributor))
+#getting pace information, first element are the labels
+jd_paces = [i.split(',') for i in jd_paces]
+pf_paces = [i.split(',') for i in pf_paces]
+han_paces = [i.split(',') for i in han_paces]
+
+#Defining VDOT ranges.
+vdot_range=[30.0,85.0]
+
+#Return date to start training
+def planner(date,time):
+    formatting = date.split('/')
+    #Checking the date format
+    if(len(formatting[0]) > 2 or len(formatting[1]) > 2 or len(formatting[2]) > 2):
+        return "Your date is the wrong format. Please put your date in mm/dd/yy format."
+    date = datetime.strptime(date, "%m/%d/%y")
+    time_new = date - timedelta(weeks=int(time))
+    return "For a "+time+" week plan, start training on "+str(time_new.month)+"/"+str(time_new.day)+"/"+str(time_new.year)+"."
+
+#Get the time from a comment and return seconds
+def get_time(time):
+    time = time.split(':')
+    if(len(time) < 3):
+        return float(time[0])+float(time[1])/60.0
+    elif(len(time) == 3):
+        return float(time[0])*60.0+float(time[1])+float(time[2])/60.0
 
 #Time formatting function. Time given in minutes as a float.
 def time_format(time):
@@ -70,7 +74,7 @@ def VDOT(time, distance):
 #Conversion function
 #Time in minutes as a float, distance as a float, unit as a string, inputs as a string, string is obvious.
 def convert(time, distance, unit,inputs, string):
-    if(unit == "miles" or unit == "m" or unit == "mile"):
+    if(unit == "mile(s)"):
         distance_conversion = str(round(distance*1.60934,1))
         time_conversion = time/1.60934
         minutes, str_seconds = time_format(time_conversion)
@@ -92,7 +96,7 @@ def convert(time, distance, unit,inputs, string):
         if(string == "!pacing"):
             message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each mile in "+str(minutes_perm)+":"+str_seconds_perm+", or each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+"."
 
-    if(unit == "kilometers" or unit == "km" or unit == "kilometer"):
+    if(unit == "kilometer(s)"):
         distance_conversion = str(round(distance/1.60934,1))
         time_conversion = time*1.60934
         minutes, str_seconds = time_format(time_conversion)
@@ -106,7 +110,7 @@ def convert(time, distance, unit,inputs, string):
 
         #Checking command
         if(string == "!convertdistance"):
-            message = str(distance)+" kilometers is "+distance_conversion+" ~~freedom units~~ miles."
+            message = str(distance)+" kilometers is "+distance_conversion+" miles."
         if(string == "!convertpace"):
             message = "A "+inputs+" kilometer is a "+str(minutes)+":"+str_seconds+" mile."
         if(string == "!splits"):
@@ -114,227 +118,155 @@ def convert(time, distance, unit,inputs, string):
         if(string == "!pacing"):
             message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+", or each mile in "+str(minutes_perm)+":"+str_seconds_perm+"."
     
-    if(string == "!vdot"):
+    if(string == "!vdot" or string == "!trainingpaces"):
         message = "A "+inputs+" "+str(distance)+" "+unit+" corresponds to a "+str(v_dot)+" VDOT."
+    if(string == "!trainingpaces"):
+        message = "A "+inputs+" "+str(distance)+" "+unit+" corresponds to a "+str(v_dot)+" VDOT."
+        return [message,v_dot]
+
 
     return message 
 
-#Sorting through comments and replying
-for comment in r.subreddit(sub).comments(limit=25):
-    reply=""
-    if(comment.id not in already_done and str(comment.author) != "artcbot"):
-        already_done.append(comment.id)
-        #Making sure the already_done file doesn't get too big. 
-        del already_done[0]
-        write_out("already_done",already_done)
+#Add/Edit/Delete user commands function
+#split into small functions
+def aed(comment_list,comment,author):
+    #Adding commands
+    if(comment_list.count("!add")):
+        index = comment_list.index("!add")
+        add_command = comment_list[index+1]
 
-        #Adding commands
-        if(comment.body.count("!add") and str(comment.author) in contributors):
-            comment_list = str(comment.body)
-            comment_list = comment_list.split()
-            #Finding command to add
-            index = comment_list.index("!add")
-            add_command = comment_list[index+1]
-            #Searching if command already exists.
-            if("!"+add_command in command_list):
-                comment.reply("The command !"+add_command+" already exists. Please try !edit instead.")
-                break
-            #Stopping people from overwriting built in commands
-            if(add_command in built_in):
-                comment.reply("That command cannot be added as it's built into my programming. Please try a different name.")
-                break
-            #Taking the rest of the comment as the new command and stripping it downs
-            new_command = str(comment.body).replace("!add","")
-            new_command = new_command.replace(add_command,"",1)
-            new_command = new_command.lstrip()
-            #Stopping command responses that start with !
-            if(add_command[0] == "!" or new_command[0] == "!"):
-                comment.reply("That command cannot be added because it either has an extra ! in the command or the response starts with !\n\n The command is `!add new_command response`")
-                break
-            #Human friendly version of the edit
-            temp = new_command
-            new_command = new_command.splitlines()
-            #Doing fancy shit to make the commands work
-            new_command = r'\n'.join(map(str, new_command))
-            #Actually adding the command
-            command_list.append("!"+add_command)
-            command_list.append(new_command)
-            last_edit.append(str(comment.author))
-            write_out('command_list',command_list)
-            write_out('last_edit',last_edit)
-            comment.reply("Successfully added !"+add_command+"\n\n The new response is:\n\n"+temp)
-            break
+        #Searching if command already exists.
+        if("!"+add_command in command_list):
+            reply = ("The command !"+add_command+" already exists. Please try !edit instead.")
+            return reply
 
-        #Deleting commands
-        if(comment.body.count("!delete") and str(comment.author) in contributors):
-            comment_list = str(comment.body)
-            comment_list = comment_list.split()
-            #Finding command user wants to delete
-            index = comment_list.index("!delete")
-            delete_command = comment_list[index+1]
-            command_index = command_list.index("!"+delete_command)
-            #Actually deleting command
-            del command_list[command_index]
-            del command_list[command_index]
-            del last_edit[int(command_index/2)]
-            write_out('command_list',command_list)
-            write_out('last_edit',last_edit)
-            comment.reply("Successfully deleted !"+delete_command)
-            break
+        #Stopping people from overwriting built in commands
+        if(add_command in built_in):
+            reply = ("That command cannot be added as it's built into my programming. Please try a different name.")
+            return reply
 
+        #Taking the rest of the comment as the new command and stripping it downs
+        new_command = comment.replace("!add","")
+        new_command = new_command.replace(add_command,"",1)
+        new_command = new_command.lstrip()
+    
+        #Stopping command responses that start with !
+        if(add_command[0] == "!" or new_command[0] == "!"):
+            reply = "That command cannot be added because it either has an extra ! in the command or the response starts with !\n\n The command is `!add new_command response."
+            return reply
+
+        #Human friendly version of the edit
+        temp = new_command
+        new_command = new_command.splitlines()
+        #Doing fancy shit to make the commands work
+        new_command = r'\n'.join(map(str, new_command))
+        #Actually adding the command
+        command_list.append("!"+add_command)
+        command_list.append(new_command)
+        write_out('command_list',command_list) 
+        reply = "Successfully added !"+add_command+"\n\n The new response is:\n\n"+temp
+        return reply
+
+    #Deleting commands
+    elif(comment_list.count("!delete")):
+        index = comment_list.index("!delete")
+        delete_command = comment_list[index+1]
+        command_index = command_list.index("!"+delete_command)
+        #Actually deleting command
+        del command_list[command_index]
+        del command_list[command_index]
+        write_out('command_list',command_list)
+        reply = "Successfully deleted !"+delete_command
+        return reply
+
+    elif(comment_list.count("!edit")):
         #Editing commands
-        if(comment.body.count("!edit") and str(comment.author) in contributors):
-            comment_list = str(comment.body)
-            comment_list = comment_list.split()
-            #Finding command user wants to edit
-            index = comment_list.index("!edit")
-            edit_command = comment_list[index+1]
-            #Taking the rest of the comment as the new command and stripping it down
-            new_command = str(comment.body).replace("!edit","")
-            new_command = new_command.replace(edit_command,"",1)
-            new_command = new_command.lstrip()
-            #Human friendly version of the edit
-            temp = new_command
-            new_command = new_command.splitlines()
-            #Doing fancy shit to make the commands work
-            new_command = r'\n'.join(map(str, new_command))
-            #Making sure the command exists
-            if("!"+edit_command not in command_list):
-                comment.reply("That command does not exist. Try !add instead.")
-                break
-            #Actually replacing the command
-            command_index = command_list.index("!"+edit_command)
-            #Easier to delete both old command and response and append the new ones
-            del command_list[command_index]
-            del command_list[command_index]
-            del last_edit[int(command_index/2)]
-            command_list.append("!"+edit_command)
-            command_list.append(new_command)
-            last_edit.append(str(comment.author))
-            write_out('command_list',command_list)
-            write_out('last_edit',last_edit)
-            comment.reply("Successfully edited !"+edit_command+"\n\n The new response is:\n\n"+temp)
-            break
-
-        #Replying to users not allowed to edit comments
-        if(comment.body.count("!edit") and str(comment.author) not in contributors):
-            comment.reply("Sorry, you are not allowed to edit commands.")
-            break
-	
-        #Replying to users not allowed to add commands
-        if(comment.body.count("!add") and str(comment.author) not in contributors):
-            comment.reply("Sorry, you are not allowed to edit commands.")
-            break
-
-        #Replying to users not allowed to delete commands
-        if(comment.body.count("!delete") and str(comment.author) not in contributors):
-            comment.reply("Sorry, you are not allowed to edit commands.")
-            break
-        
-        #Help command
-        if(comment.body.count("!help") and str(comment.author) != "artcbot"):
-            index = command_list.index("!help")
-            #Having to convert back from raw string
-            reply = codecs.decode(command_list[index+1], 'unicode_escape')
-            reply += "\n\n **Community made commands and quick links are (user who edited the command in parentheses):** \n\n"
-            for i in range(0,len(command_list)-1,2):
-                if(i != index and i < len(command_list)-2):
-                    reply += command_list[i]+" ("+last_edit[int(i/2)]+"), "
-                elif(i != index):
-                    reply += command_list[i]+" ("+last_edit[int(i/2)]+")"
-            reply += "\n\n**I can reply to multiple commands at a time, so don't be picky.**"
-            comment.reply(reply)
-            break
-
-        #Splitting up the comment text by white space and seeing if it has any commands
-        comment_list = str(comment.body)
-        comment_list = comment_list.split()
-        common = list(set(comment_list).intersection(command_list))
-        #Replying if there is a command
-        if(len(common) > 0 and common.count("!help") < 1):
-            for i in range(0,len(common)):
-                command_index = command_list.index(common[i])
-                #Having to convert back from raw string
-                reply += "\n\n"+codecs.decode(command_list[command_index+1], 'unicode_escape')
-
-        #Converting distances between km and miles, and vise versa.
-        if(comment.body.count("!convertdistance")):
-            indices = [i for i, x in enumerate(comment_list) if x == "!convertdistance"]
-            for i in indices:
-                unit = comment_list[i+2].lower()
-                distance = comment_list[i+1]
-                distance = float(distance)
-                reply += "\n\n"+convert(1, distance, unit, 1,"!convertdistance")
-
-        #Converting paces between km/min and miles/min, and vise versa
-        if(comment.body.count("!convertpace")):
-            indices = [i for i, x in enumerate(comment_list) if x == "!convertpace"]
-            for i in indices:
-                unit = comment_list[i+2].lower()
-                time = comment_list[i+1]
-                time = time.split(':')
-                if(len(time) < 3):
-                    time = float(time[0])+float(time[1])/60.0
-                elif(len(time) == 3):
-                    time = float(time[0])*60.0+float(time[1])+float(time[2])/60.0
-                reply += "\n\n"+convert(time, 1, unit, comment_list[i+1], "!convertpace")
-
-        #Track split calculator
-        if(comment.body.count("!splits")):
-            indices = [i for i, x in enumerate(comment_list) if x == "!splits"]
-            for i in indices:
-                unit = comment_list[i+2].lower()
-                time = comment_list[i+1]
-                time = time.split(':')
-                if(len(time) < 3):
-                    time = float(time[0])+float(time[1])/60.0
-                elif(len(time) == 3):
-                    time = float(time[0])*60.0+float(time[1])+float(time[2])/60.0
-                reply += "\n\n"+convert(time, 1, unit, comment_list[i+1], "!splits")
-
-        #Training plan calculator
-        if(comment.body.count("!planner")):
-            indices = [i for i, x in enumerate(comment_list) if x == "!planner"]
-            for i in indices:
-                date = comment_list[i+1]
-                formatting = date.split('/')
-                #Checking the date format
-                if(len(formatting[0]) > 2 or len(formatting[1]) > 2 or len(formatting[2]) > 2):
-                    comment.reply("Your date is the wrong format. Please put your date in mm/dd/yy format.")
-                    break
-                time= comment_list[i+2]
-                date = datetime.strptime(date, "%m/%d/%y")
-                time_new = date - timedelta(weeks=int(time))
-                reply += "\n\n"+"For a "+time+" week plan, start training on "+str(time_new.month)+"/"+str(time_new.day)+"/"+str(time_new.year)+"."
-
-        #Race pace calculator
-        if(comment.body.count("!pacing")):
-            indices = [i for i, x in enumerate(comment_list) if x == "!pacing"]
-            for i in indices:
-                time = comment_list[i+1]
-                time = time.split(':')
-                distance = float(comment_list[i+2])
-                unit = comment_list[i+3].lower()
-                if(len(time) < 3):
-                    time = float(time[0])+float(time[1])/60.0
-                elif(len(time) == 3):
-                    time = float(time[0])*60.0+float(time[1])+float(time[2])/60.0
-                reply += "\n\n"+convert(time, distance, unit, comment_list[i+1], "!pacing")
+        index = comment_list.index("!edit")
+        edit_command = comment_list[index+1]
+        #Taking the rest of the comment as the new command and stripping it down
+        new_command = comment.replace("!edit","")
+        new_command = new_command.replace(edit_command,"",1)
+        new_command = new_command.lstrip()
+        #Human friendly version of the edit
+        temp = new_command
+        new_command = new_command.splitlines()
+        #Doing fancy shit to make the commands work
+        new_command = r'\n'.join(map(str, new_command))
+        #Making sure the command exists
+        if("!"+edit_command not in command_list):
+            reply = "That command does not exist. Try !add instead."
+            return reply
             
-        #VDOT calculator
-        if(comment.body.count("!vdot")):
-            indices = [i for i, x in enumerate(comment_list) if x == "!vdot"]
-            for i in indices:
-                time = comment_list[i+1]
-                time = time.split(':')
-                distance = float(comment_list[i+2])
-                unit = comment_list[i+3].lower()
-                if(len(time) < 3):
-                    time = float(time[0])+float(time[1])/60.0
-                elif(len(time) == 3):
-                    time = float(time[0])*60.0+float(time[1])+float(time[2])/60.0
-                reply += "\n\n"+convert(time, distance, unit, comment_list[i+1], "!vdot")
-            
-        #Replying to comment if a function was performed.
-        if(len(reply) > 1):
-            comment.reply(reply)
+        #Actually replacing the command
+        command_index = command_list.index("!"+edit_command)
+        #Easier to delete both old command and response and append the new ones
+        del command_list[command_index] 
+        del command_list[command_index]
+        command_list.append("!"+edit_command)
+        command_list.append(new_command)
+        write_out('command_list',command_list)
+        reply = "Successfully edited !"+edit_command+"\n\n The new response is:\n\n"+temp
+        return reply
+
+#Responding to help commands
+def help(comment_list):
+    #Having to convert back from raw string
+    index = command_list.index("!help")
+    reply = codecs.decode(command_list[index+1], 'unicode_escape')
+    reply += "\n\n **Community made commands and quick links are:** \n\n"
+    for i in range(0,len(command_list)-1,2):
+        if(i != index and i < len(command_list)-2):
+            reply += command_list[i]+", "
+    reply += "\n\n**I can reply to multiple commands at a time, so don't be picky.**"
+    return reply
+
+#Paces based on VDOT
+def trainingpaces(v_dot):
+    reply = ""
+    #input array, input string for labels 
+    reply1 = pace_table(jd_paces[1:], jd_paces[0], v_dot, "Jack Daniels")
+    #checking to make sure the no listed paces output isn't the response
+    if(not reply1.count("There")):
+        reply += "\n\n For a "+str(v_dot)+" VDOT here are training paces from popular books."
+        reply += reply1
+        reply += pace_table(pf_paces[1:], pf_paces[0], v_dot, "Pfitz")
+        reply += pace_table(han_paces[1:], han_paces[0], v_dot, "Hansons")
+    else:
+        reply += reply1
+    return reply
+
+#Returning a reddit formatted table for an input vdot
+def pace_table(input_array, input_string, v_dot, source):
+    for i in range(0,len(input_array)-1,1):
+        reply = ""
+        #it was being weird so now I have weird conditionals to make it work
+        if(float(input_array[i][0]) == v_dot):
+            reply = make_table(input_array, input_string, source, i)
+            break;
+        elif(float(input_array[i+1][0]) == v_dot):
+            reply = make_table(input_array, input_string, source, i+1)
+            break;
+        elif(float(input_array[i][0]) <= v_dot and float(input_array[i+1][0]) >= v_dot):
+            reply = make_table(input_array, input_string, source, i)
+            break;
+    if(float(v_dot) < min(vdot_range) or float(v_dot) > max(vdot_range)):
+        reply = "\n\nThere are no listed training paces for a "+str(v_dot)+" VDOT."
+    return reply
+
+def make_table(input_array, input_string, source, index):
+    reply = "\n\n **"+source+"**\n\n"
+    for j in range(1,len(input_string)):
+        reply += input_string[j]+' | '
+    table_break = " -- |"*len(input_string)
+    reply += "\n"+table_break+"\n"
+    for j in range(1,len(input_array[index])):
+        reply += input_array[index][j]+" | "
+    return reply
+
+#stealing what tapin did for the slack version
+def get_unit(unit):
+    if (unit.startswith(('km', 'ki')) or unit == 'k'):
+        return 'kilometer(s)'
+    elif (unit.startswith('mi') or unit == 'm'):
+        return 'mile(s)'
+    return
