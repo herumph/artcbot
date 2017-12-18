@@ -11,6 +11,9 @@ sc = SlackClient(slack_token)
 
 #getting arrays
 command_list = artcbot.get_array("command_list")
+built_in = ["add","edit","delete","vdot","planner","pacing","splits","convertpace","convertdistance","trainingpaces"]
+#I'm lazy
+built_in = ["!"+i for i in built_in]
 
 def sendMessage(user, channel, message):
     sc.api_call(
@@ -27,6 +30,25 @@ def getChannel(event):
 def getUser(event):
     return event['user']
 
+#getting slack text events and responding
+sc.rtm_connect()
+while True:
+    new_events = sc.rtm_read()
+    for events in new_events:
+        if(events["type"] == "message"):
+            message = events["text"].split(' ')
+            command = list(set(message).intersection(command_list))
+            function = list(set(message).intersection(built_in))
+            if(len(command) > 0 or len(function) > 0):
+                channel = getChannel(events)
+                user = getUser(events)
+                #sending contributors as an empty list, no editing of commands on slack
+                message = artcbot.call_bot(message, user, [])
+                if(len(message) > 1): sendMessage(user, channel, message)
+    time.sleep(1)
+
+###########################
+#not used (possibly broken)
 def parseDistance(orig):
     dist = 0
     unit = 'na'
@@ -51,102 +73,3 @@ def parseDistance(orig):
         unit = 'mile(s)'
 
     return [dist, unit]
-
-sc.rtm_connect()
-while True:
-    new_events = sc.rtm_read()
-    for events in new_events:
-        if events["type"] == "message":
-            #convert pace
-            if events["text"].startswith(("!pacing","!vdot")):
-                channel = getChannel(events)
-                user = getUser(events)
-                message = events["text"].split(' ')
-                command = message[0]
-                raceTime = message[1].split(':')
-                if(len(raceTime) < 3):
-                    raceTime = float(raceTime[0])+float(raceTime[1])/60.0
-                elif(len(raceTime) == 3):
-                    raceTime = float(raceTime[0])*60.0+float(raceTime[1])+float(raceTime[2])/60.0
-                if (len(message) == 3):
-                    (distance, unit) = parseDistance(message[2])
-                else:
-                    distance = float(message[2])
-                    unit = artcbot.get_unit(message[3])
-                message = artcbot.convert(raceTime,distance,unit,message[1],command)
-                sendMessage(user, channel, message) 
-            elif events["text"].startswith(("!convertpace","!splits")):
-                channel = getChannel(events)
-                user = getUser(events)
-                message = events["text"].split(' ')
-                command = message[0]
-                raceTime = message[1].split(':')
-                if(len(raceTime) < 3):
-                    raceTime = float(raceTime[0])+float(raceTime[1])/60.0
-                elif(len(raceTime) == 3):
-                    raceTime = float(raceTime[0])*60.0+float(raceTime[1])+float(raceTime[2])/60.0
-                unit = artcbot.get_unit(message[2])
-                message = artcbot.convert(raceTime,1,unit,message[1],command)
-                sendMessage(user, channel, message) 
-            elif events["text"].startswith(("!convertdistance")):
-                channel = getChannel(events)
-                user = getUser(events)
-                message = events["text"].split(' ')
-                command = message[0]
-                if (len(message) == 2):
-                    (distance, unit) = parseDistance(message[1])
-                else:
-                    distance = float(message[1])
-                    unit = artcbot.get_unit(message[2])
-                message = artcbot.convert(1,distance,unit,1,command)
-                sendMessage(user, channel, message) 
-            elif events["text"].startswith(("!planner")):
-                channel = getChannel(events)
-                user = getUser(events)
-                message = events["text"].split(' ')
-                command = message[0]
-                message = artcbot.planner(message[1],message[2])
-                sendMessage(user, channel, message)
-            elif events["text"].startswith(("I'm")):
-                channel = getChannel(events)
-                user = getUser(events)
-                message = events["text"].split(' ')
-                if(len(message) < 6 and random.randint(0,3) > 2):
-                    del message[0]
-                    message = " ".join(message)
-                    response = "Hi "+message+" I'm artcbot."
-                    sendMessage(user, channel, response)
-            elif events["text"].startswith(("!trainingpaces")):
-                channel = getChannel(events)
-                user = getUser(events)
-                message = events["text"].split(' ')
-                #cheating and copying the vdot command
-                #NOT WORKING FOR JD
-                command = message[0]
-                if(len(message) > 2):
-                    raceTime = message[1].split(':')
-                    if(len(raceTime) < 3):
-                        raceTime = float(raceTime[0])+float(raceTime[1])/60.0
-                    elif(len(raceTime) == 3):
-                        raceTime = float(raceTime[0])*60.0+float(raceTime[1])+float(raceTime[2])/60.0
-                    if (len(message) == 3):
-                        (distance, unit) = parseDistance(message[2])
-                    else:
-                        distance = float(message[2])
-                        unit = artcbot.get_unit(message[3])
-                    message = artcbot.convert(raceTime,distance,unit,message[1],command)
-                else:
-                    message = float(message[1])
-                message = "```"+artcbot.trainingpaces(round(message,0))+"```"
-                sendMessage(user, channel, message) 
-            #Has to be last elif
-            elif events["text"].startswith("!"):
-                channel = getChannel(events)
-                user = getUser(events)
-                message = events["text"].split(' ')
-                command = message[0]
-                index = command_list.index(command)
-                message = codecs.decode(command_list[index+1], 'unicode_escape')
-                sendMessage(user, channel, message)
-    
-    time.sleep(1)

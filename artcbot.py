@@ -1,8 +1,7 @@
 #ARTCbot. Responds to ! commands 
 #To do list:
 #1 - Calendar integration? !upcoming <user> and !upcoming
-#2 - PM integration for everything
-#3 - Paces from other places. BT, etc. 
+#2 - Paces from other places. BT, etc. 
 
 import codecs
 from datetime import datetime, timedelta
@@ -36,6 +35,100 @@ han_paces = [i.split(',') for i in han_paces]
 
 #Defining VDOT ranges.
 vdot_range=[30.0,85.0]
+
+#Big mess of a function to actually respond to commands
+def call_bot(body, author, contributors):
+    reply=""
+
+    #add/edit/delete commands
+    if(body.count("!add") or body.count("!delete") or body.count("!edit")):
+        if(str(author) not in contributors):
+            reply += "Sorry, you are not allowed to edit commands."
+            return reply 
+        else:
+            reply += aed(body,author)
+            return reply
+
+    #Help
+    if(body.count("!help")):
+        reply += help(body)
+        return reply
+
+    #User commands
+    common = list(set(body).intersection(command_list))
+    if(len(common) > 0 and common.count("!help") < 1):
+        for i in range(0,len(common)):
+            command_index = command_list.index(common[i])
+            reply += "\n\n"+codecs.decode(command_list[command_index+1], 'unicode_escape')
+
+    #Distance conversions
+    if(body.count("!convertdistance")):
+        indices = [i for i, x in enumerate(body) if x == "!convertdistance"]
+        for i in indices:
+            unit = get_unit(body[i+2].lower())
+            distance = body[i+1]
+            distance = float(distance)
+            reply += "\n\n"+convert(1, distance, unit, 1,"!convertdistance")
+
+    #Converting paces
+    if(body.count("!convertpace")):
+        indices = [i for i, x in enumerate(body) if x == "!convertpace"]
+        for i in indices:
+            unit = get_unit(body[i+2].lower())
+            time = get_time(body[i+1])
+            reply += "\n\n"+convert(time, 1, unit, body[i+1], "!convertpace")
+
+    #Track split calculator
+    if(body.count("!splits")):
+        indices = [i for i, x in enumerate(body) if x == "!splits"]
+        for i in indices:
+            unit = get_unit(body[i+2].lower())
+            time = get_time(body[i+1])
+            reply += "\n\n"+convert(time, 1, unit, body[i+1], "!splits")
+
+    #Training plan calculator
+    if(body.count("!planner")):
+        indices = [i for i, x in enumerate(body) if x == "!planner"]
+        for i in indices:
+            reply += "\n\n"+planner(body[i+1],body[i+2])
+
+    #Race pace calculator
+    if(body.count("!pacing")):
+        indices = [i for i, x in enumerate(body) if x == "!pacing"]
+        for i in indices:
+            time = get_time(body[i+1])
+            distance = float(body[i+2])
+            unit = get_unit(body[i+3].lower())
+            reply += "\n\n"+convert(time, distance, unit, body[i+1], "!pacing")
+
+    #VDOT calculator
+    if(body.count("!vdot")):
+        indices = [i for i, x in enumerate(body) if x == "!vdot"]
+        for i in indices:
+            time = get_time(body[i+1])
+            distance = float(body[i+2])
+            unit = get_unit(body[i+3].lower())
+            reply += "\n\n"+convert(time, distance, unit, body[i+1], "!vdot")
+
+    #Training paces calculator
+    if(body.count("!trainingpaces")):
+        indices = [i for i, x in enumerate(body) if x == "!trainingpaces"]
+        for i in indices:
+            if(len(body) > 2 and (i+2) not in indices and (i+2) < len(body)):
+                unit = get_unit(body[i+3])
+                if(unit == "mile(s)" or unit == "kilometer(s)"):
+                    time = get_time(body[i+1])
+                    distance = float(body[i+2])
+                    v_dot = convert(time, distance, unit, body[i+1], "!trainingpaces")
+                    reply += v_dot[0]
+                    #Rounding
+                    v_dot = round(v_dot[1],0)
+                else:
+                    v_dot = round(float(body[i+1]),0)
+            else:
+                v_dot = round(float(body[i+1]),0)
+            reply += trainingpaces(v_dot)
+    return reply
 
 #Return date to start training
 def planner(date,time):
@@ -128,12 +221,11 @@ def convert(time, distance, unit,inputs, string):
     return message 
 
 #Add/Edit/Delete user commands function
-#split into small functions
-def aed(comment_list,comment,author):
+def aed(body,author):
     #Adding commands
-    if(comment_list.count("!add")):
-        index = comment_list.index("!add")
-        add_command = comment_list[index+1]
+    if(body.count("!add")):
+        index = body.index("!add")
+        add_command = body[index+1]
 
         #Searching if command already exists.
         if("!"+add_command in command_list):
@@ -146,6 +238,7 @@ def aed(comment_list,comment,author):
             return reply
 
         #Taking the rest of the comment as the new command and stripping it downs
+        comment = ' '.join(body)
         new_command = comment.replace("!add","")
         new_command = new_command.replace(add_command,"",1)
         new_command = new_command.lstrip()
@@ -168,9 +261,9 @@ def aed(comment_list,comment,author):
         return reply
 
     #Deleting commands
-    elif(comment_list.count("!delete")):
-        index = comment_list.index("!delete")
-        delete_command = comment_list[index+1]
+    elif(body.count("!delete")):
+        index = body.index("!delete")
+        delete_command = body[index+1]
         command_index = command_list.index("!"+delete_command)
         #Actually deleting command
         del command_list[command_index]
@@ -179,11 +272,12 @@ def aed(comment_list,comment,author):
         reply = "Successfully deleted !"+delete_command
         return reply
 
-    elif(comment_list.count("!edit")):
+    elif(body.count("!edit")):
         #Editing commands
-        index = comment_list.index("!edit")
-        edit_command = comment_list[index+1]
+        index = body.index("!edit")
+        edit_command = body[index+1]
         #Taking the rest of the comment as the new command and stripping it down
+        comment = ' '.join(body)
         new_command = comment.replace("!edit","")
         new_command = new_command.replace(edit_command,"",1)
         new_command = new_command.lstrip()
@@ -209,7 +303,7 @@ def aed(comment_list,comment,author):
         return reply
 
 #Responding to help commands
-def help(comment_list):
+def help(body):
     #Having to convert back from raw string
     index = command_list.index("!help")
     reply = codecs.decode(command_list[index+1], 'unicode_escape')
