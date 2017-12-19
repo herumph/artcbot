@@ -1,11 +1,13 @@
 #ARTCbot. Responds to ! commands 
 #To do list:
 #1 - Calendar integration? !upcoming <user> and !upcoming
-#2 - Paces from other places. BT, etc. 
+#2 - Paces in km and miles.
+#3 - Paces from other places. BT, etc.
 
 import codecs
 from datetime import datetime, timedelta
 from math import exp
+import statistics as stats
 
 #Functions to read and write files into arrays.
 def get_array(input_string):
@@ -26,7 +28,8 @@ jd_paces = get_array("jd_paces")
 pf_paces = get_array("pf_paces")
 han_paces = get_array("han_paces")
 #Defining built in commands
-built_in = ["add","edit","delete","vdot","planner","pacing","splits","convertpace","convertdistance","trainingpaces"]
+built_in = ["add","edit","delete","vdot","planner","pacing","splits",\
+"convertpace","convertdistance","trainingpaces","acute"]
 
 #getting pace information, first element are the labels
 jd_paces = [i.split(',') for i in jd_paces]
@@ -128,6 +131,15 @@ def call_bot(body, author, contributors):
             else:
                 v_dot = round(float(body[i+1]),0)
             reply += trainingpaces(v_dot)
+
+    #acute to chronic ratio
+    if(body.count("!acute")):
+        indices = [i for i, x in enumerate(body) if x == "!acute"]
+        for i in indices:
+            last_four = [float(body[j]) for j in range(i+1,i+4)]
+            average = stats.mean(last_four)
+            ratio = round(last_four[-1]/average,2)
+            reply += str(ratio)
     return reply
 
 #Return date to start training
