@@ -11,7 +11,8 @@ sc = SlackClient(slack_token)
 
 #getting arrays
 command_list = artcbot.get_array("command_list")
-built_in = ["add","edit","delete","vdot","planner","pacing","splits","convertpace","convertdistance","trainingpaces"]
+built_in = ["add","edit","delete","vdot","planner","pacing","splits",\
+"convertpace","convertdistance","trainingpaces","acute"]
 #I'm lazy
 built_in = ["!"+i for i in built_in]
 
@@ -43,7 +44,7 @@ while True:
                 channel = getChannel(events)
                 user = getUser(events)
                 #sending contributors as an empty list, no editing of commands on slack
-                message = artcbot.call_bot(message, user, [])
+                message = artcbot.call_bot(message, user, ['herumph'])
                 if(len(message) > 1): sendMessage(user, channel, message)
     time.sleep(1)
 
