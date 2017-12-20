@@ -12,7 +12,7 @@ sc = SlackClient(slack_token)
 #getting arrays
 command_list = artcbot.get_array("command_list")
 built_in = ["add","edit","delete","vdot","planner","pacing","splits",\
-"convertpace","convertdistance","trainingpaces","acute"]
+"convertpace","convertdistance","trainingpaces","acute","upcoming"]
 #I'm lazy
 built_in = ["!"+i for i in built_in]
 

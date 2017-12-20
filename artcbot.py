@@ -1,8 +1,8 @@
 #ARTCbot. Responds to ! commands 
 #To do list:
-#1 - Calendar integration? !upcoming <user> and !upcoming
-#2 - Paces in km and miles.
-#3 - Paces from other places. BT, etc.
+#1 - Paces in km and miles.
+#2 - Paces from other places. BT, etc.
+#3 - Make built_in a read in list so it only has to be maintained in one spot.
 
 import codecs
 from datetime import datetime, timedelta
@@ -22,6 +22,16 @@ def write_out(input_string,input_array):
             f.write(i+"\n")
     return
 
+def get_races():
+    with open("textfiles/artc_races.csv","r") as f:
+        read_in = f.readlines()
+    read_in = [x.strip("\n") for x in read_in]
+    read_in = [i.split(';') for i in read_in]
+    #trimming header out
+    read_in = read_in[1:]
+    #read_in = [i for sublist in read_in for i in sublist]
+    return(read_in)
+
 #Fetching arrays
 command_list = get_array("command_list")
 jd_paces = get_array("jd_paces")
@@ -29,7 +39,7 @@ pf_paces = get_array("pf_paces")
 han_paces = get_array("han_paces")
 #Defining built in commands
 built_in = ["add","edit","delete","vdot","planner","pacing","splits",\
-"convertpace","convertdistance","trainingpaces","acute"]
+"convertpace","convertdistance","trainingpaces","acute","upcoming"]
 
 #getting pace information, first element are the labels
 jd_paces = [i.split(',') for i in jd_paces]
@@ -136,10 +146,71 @@ def call_bot(body, author, contributors):
     if(body.count("!acute")):
         indices = [i for i, x in enumerate(body) if x == "!acute"]
         for i in indices:
-            last_four = [float(body[j]) for j in range(i+1,i+4)]
+            last_four = [float(body[j]) for j in range(i+1,i+5)]
             average = stats.mean(last_four)
             ratio = round(last_four[-1]/average,2)
             reply += str(ratio)
+
+    #upcoming races
+    if(body.count("!upcoming")):
+        indices = [i for i, x in enumerate(body) if x == "!upcoming"]
+        #reading in the race csv file
+        race_info = get_races()
+        time = datetime.now()
+        for i in indices:
+            if(len(body) > 1):
+                #specific races for a user
+                if(body[i+1] == 'user'):
+                    user = body[i+2]
+                    user_races = [j for j in race_info if(j[0].lower() == user.lower() and \
+                        j[3] != '' and j[3] != 'Date(M/D/Y)' and \
+                        strip_time(j[3])-time >= timedelta(seconds=1))]
+                    #reddit table formatting
+                    if(len(user_races) > 0):
+                        reply += 'Upcoming races for '+user+':\n\n'
+                        reply += race_table(user_races, user)
+                    #responding if there are no races upcoming
+                    else:
+                        reply += 'No upcoming races for '+user+'.\n\n'              
+                #upcoming races in the next week
+                else:
+                    user_races = [j for j in race_info if(j[3] != '' and \
+                        j[3] != 'Date(M/D/Y)' and \
+                        strip_time(j[3]) >= time+timedelta(weeks=1))]
+                    reply += 'Upcoming races in the next week:\n\n'
+                    reply += race_table(user_races,0)
+            else:
+                user_races = [j for j in race_info if(j[3] != '' and \
+                    j[3] != 'Date(M/D/Y)' and \
+                    strip_time(j[3]) >= time+timedelta(seconds=1) and\
+                    strip_time(j[3]) <= time+timedelta(weeks=1))]
+                reply += 'Upcoming races in the next week:\n\n'
+                reply += race_table(user_races,0)
+
+    return reply
+
+#accepting both mm/dd/yy and mm/dd/yyyy format
+def strip_time(time):
+    try:
+        date = datetime.strptime(time, "%m/%d/%Y")
+    except:
+        date = datetime.strptime(time, "%m/%d/%y")
+    return date
+
+#creating reddit table of upcoming races
+def race_table(races, user):
+    if(user != 0): 
+        reply = "\nDate | Race | Distance\n"
+        reply += "-- | -- | --\n"
+        for i in races:
+            reply += i[3]+" | "+i[1]+" | "+i[2]+'\n'
+
+    elif(user == 0):
+        reply = "\nDate | Username | Race | Distance\n"
+        reply += "-- | -- | -- | --\n"
+        for i in races:
+            reply += i[3]+" | "+i[0]+" | "+i[1]+" | "+i[2]+'\n'
+
     return reply
 
 #Return date to start training
@@ -199,7 +270,8 @@ def convert(time, distance, unit,inputs, string):
         if(string == "!splits"):
             message = "For a "+inputs+" mile, run "+str(split)+" second 400s."
         if(string == "!pacing"):
-            message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each mile in "+str(minutes_perm)+":"+str_seconds_perm+", or each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+"."
+            message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each mile in "+str(minutes_perm)+":"+str_seconds_perm+\
+            ", or each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+"."
 
     if(unit == "kilometer(s)"):
         distance_conversion = str(round(distance/1.60934,1))
@@ -221,7 +293,8 @@ def convert(time, distance, unit,inputs, string):
         if(string == "!splits"):
             message = "For a "+inputs+" kilometer, run "+str(split)+" second 400s."
         if(string == "!pacing"):
-            message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+", or each mile in "+str(minutes_perm)+":"+str_seconds_perm+"."
+            message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+\
+            ", or each mile in "+str(minutes_perm)+":"+str_seconds_perm+"."
     
     if(string == "!vdot" or string == "!trainingpaces"):
         message = "A "+inputs+" "+str(distance)+" "+unit+" corresponds to a "+str(v_dot)+" VDOT."

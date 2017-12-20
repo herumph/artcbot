@@ -20,6 +20,7 @@ contributors = [str(contributor) for contributor in r.subreddit(sub).contributor
 
 #Looking at comments
 for comment in r.subreddit(sub).comments(limit=25):
+    reply = ""
     if(comment.id not in already_done and str(comment.author) != "artcbot"):
         #marking comment as read if it's a reply
         #this ensures that the PM part does not respond as well
@@ -31,7 +32,7 @@ for comment in r.subreddit(sub).comments(limit=25):
 
         #Saving comment
         comment_list = str(comment.body)
-        comment_list = comment_list.split()
+        comment_list = comment_list.split(' ')
 
         #passing off to get reply
         reply = artcbot.call_bot(comment_list, comment.author, contributors)
@@ -47,7 +48,7 @@ for pm in r.inbox.unread(limit=25):
     #only responding to pm's, not comment replies
     if(not pm.was_comment):
         body = str(pm.body)
-        body = body.split()
+        body = body.split(' ')
 
         reply = artcbot.call_bot(body, pm.author, contributors)
 
