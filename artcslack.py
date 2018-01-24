@@ -5,6 +5,7 @@ import time
 import codecs
 import random
 from slackclient import SlackClient
+from datetime import datetime
 
 slack_token = os.environ["SLACK_BOT_TOKEN"]
 sc = SlackClient(slack_token)
@@ -34,6 +35,7 @@ def getUser(event):
 #getting slack text events and responding
 sc.rtm_connect()
 while True:
+    now = datetime.now()
     new_events = sc.rtm_read()
     for events in new_events:
         if(events["type"] == "message"):
@@ -41,10 +43,10 @@ while True:
             command = list(set(message).intersection(command_list))
             function = list(set(message).intersection(built_in))
             if(len(command) > 0 or len(function) > 0):
-                channel = getChannel(events)
+                #channel = getChannel(events)
                 user = getUser(events)
                 #sending contributors as an empty list, no editing of commands on slack
-                message = artcbot.call_bot(message, user, ['herumph'])
+                message = artcbot.call_bot(message, user, ['U4Z02CNN6'])
                 if(len(message) > 1): sendMessage(user, channel, message)
     time.sleep(1)
 
