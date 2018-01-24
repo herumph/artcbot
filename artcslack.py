@@ -38,7 +38,7 @@ while True:
     now = datetime.now()
     new_events = sc.rtm_read()
     for events in new_events:
-        if(events["type"] == "message"):
+        if(events["type"] == "message" or events["type"] == "file_created"):
             channel = getChannel(events)
             #it is wednesday, my dudes
             if(channel == "C78G97C9F" and now.weekday() == 2): #dumbmemes
