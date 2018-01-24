@@ -39,13 +39,18 @@ while True:
     new_events = sc.rtm_read()
     for events in new_events:
         if(events["type"] == "message"):
+            channel = getChannel(events)
+            #it is wednesday, my dudes
+            if(channel == "C78G97C9F" and now.weekday() == 2): #dumbmemes
+            #if(channel == "C50T5QMQ8"): #BARTC
+                user = getUser(events)
+                sc.api_call("reactions.add", token = slack_token, name = 'wednesday', channel = channel, timestamp = events['ts'])
             message = events["text"].split(' ')
             command = list(set(message).intersection(command_list))
             function = list(set(message).intersection(built_in))
             if(len(command) > 0 or len(function) > 0):
-                #channel = getChannel(events)
                 user = getUser(events)
-                #sending contributors as an empty list, no editing of commands on slack
+                #sending user id(s) as contributor(s)
                 message = artcbot.call_bot(message, user, ['U4Z02CNN6'])
                 if(len(message) > 1): sendMessage(user, channel, message)
     time.sleep(1)
