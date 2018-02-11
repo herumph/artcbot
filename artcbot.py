@@ -5,6 +5,7 @@
 #3 - Make built_in a read in list so it only has to be maintained in one spot.
 
 import codecs
+import re
 from datetime import datetime, timedelta
 from math import exp
 import statistics as stats
@@ -110,8 +111,11 @@ def call_bot(body, author, contributors):
         indices = [i for i, x in enumerate(body) if x == "!pacing"]
         for i in indices:
             time = get_time(body[i+1])
-            distance = float(body[i+2])
-            unit = get_unit(body[i+3].lower())
+            (distance, label) = parse_distance_unit(body[i+2])
+            if (label == ""):
+                unit = get_unit(body[i+3].lower())
+            else:
+                unit = get_unit(label.lower())
             reply += "\n\n"+convert(time, distance, unit, body[i+1], "!pacing")
 
     #VDOT calculator
@@ -303,7 +307,19 @@ def convert(time, distance, unit,inputs, string):
         return [message,v_dot]
 
 
-    return message 
+    return message
+
+def parse_distance_unit(distance):
+    match = re.match(r"(\d+)(\w*)", distance, re.I)
+    dist = 0
+    unit = ""
+    if match:
+        items = match.groups()
+        # items is ("5", "km")
+        dist = float(items[0])
+        if(len(items)>1):
+            unit = items[1]
+    return (dist, unit)
 
 #Add/Edit/Delete user commands function
 def aed(body,author):
