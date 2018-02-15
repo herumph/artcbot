@@ -1,4 +1,4 @@
-#ARTCbot. Responds to ! commands 
+#ARTCbot. Responds to ! commands
 #To do list:
 #1 - Paces in km and miles.
 #2 - Paces from other places. BT, etc.
@@ -39,8 +39,8 @@ jd_paces = get_array("jd_paces")
 pf_paces = get_array("pf_paces")
 han_paces = get_array("han_paces")
 #Defining built in commands
-built_in = ["add","edit","delete","vdot","planner","pacing","splits",\
-"convertpace","convertdistance","trainingpaces","acute","upcoming"]
+built_in = ["add","edit","delete","vdot","planner","pacing","splits", \
+            "convertpace","convertdistance","trainingpaces","acute","upcoming"]
 
 #getting pace information, first element are the labels
 jd_paces = [i.split(',') for i in jd_paces]
@@ -58,7 +58,7 @@ def call_bot(body, author, contributors):
     if(body.count("!add") or body.count("!delete") or body.count("!edit")):
         if(str(author) not in contributors):
             reply += "Sorry, you are not allowed to edit commands."
-            return reply 
+            return reply
         else:
             reply += aed(body,author)
             return reply
@@ -167,27 +167,27 @@ def call_bot(body, author, contributors):
                 if(body[i+1] == 'user'):
                     user = body[i+2]
                     user_races = [j for j in race_info if(j[0].lower() == user.lower() and \
-                        j[3] != '' and j[3] != 'Date(M/D/Y)' and \
-                        strip_time(j[3])-time >= timedelta(seconds=1))]
+                                                          j[3] != '' and j[3] != 'Date(M/D/Y)' and \
+                                                          strip_time(j[3])-time >= timedelta(seconds=1))]
                     #reddit table formatting
                     if(len(user_races) > 0):
                         reply += 'Upcoming races for '+user+':\n\n'
                         reply += race_table(user_races, user)
                     #responding if there are no races upcoming
                     else:
-                        reply += 'No upcoming races for '+user+'.\n\n'              
+                        reply += 'No upcoming races for '+user+'.\n\n'
                 #upcoming races in the next week
                 else:
                     user_races = [j for j in race_info if(j[3] != '' and \
-                        j[3] != 'Date(M/D/Y)' and \
-                        strip_time(j[3]) >= time+timedelta(weeks=1))]
+                                                          j[3] != 'Date(M/D/Y)' and \
+                                                          strip_time(j[3]) >= time+timedelta(weeks=1))]
                     reply += 'Upcoming races in the next week:\n\n'
                     reply += race_table(user_races,0)
             else:
                 user_races = [j for j in race_info if(j[3] != '' and \
-                    j[3] != 'Date(M/D/Y)' and \
-                    strip_time(j[3]) >= time+timedelta(seconds=1) and\
-                    strip_time(j[3]) <= time+timedelta(weeks=1))]
+                                                      j[3] != 'Date(M/D/Y)' and \
+                                                      strip_time(j[3]) >= time+timedelta(seconds=1) and \
+                                                      strip_time(j[3]) <= time+timedelta(weeks=1))]
                 reply += 'Upcoming races in the next week:\n\n'
                 reply += race_table(user_races,0)
 
@@ -203,7 +203,7 @@ def strip_time(time):
 
 #creating reddit table of upcoming races
 def race_table(races, user):
-    if(user != 0): 
+    if(user != 0):
         reply = "\nDate | Race | Distance\n"
         reply += "-- | -- | --\n"
         for i in races:
@@ -243,7 +243,7 @@ def time_format(time):
     if(seconds < 10):
         str_seconds = "0"+str(seconds)
     return (minutes, str_seconds)
-    
+
 #Calculating VDOT
 #Time given in minutes as a float, distance as a float in kilometers
 def VDOT(time, distance):
@@ -274,8 +274,8 @@ def convert(time, distance, unit,inputs, string):
         if(string == "!splits"):
             message = "For a "+inputs+" mile, run "+str(split)+" second 400s."
         if(string == "!pacing"):
-            message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each mile in "+str(minutes_perm)+":"+str_seconds_perm+\
-            ", or each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+"."
+            message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each mile in "+str(minutes_perm)+":"+str_seconds_perm+ \
+                      ", or each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+"."
 
     if(unit == "kilometer(s)"):
         distance_conversion = str(round(distance/1.60934,1))
@@ -297,9 +297,9 @@ def convert(time, distance, unit,inputs, string):
         if(string == "!splits"):
             message = "For a "+inputs+" kilometer, run "+str(split)+" second 400s."
         if(string == "!pacing"):
-            message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+\
-            ", or each mile in "+str(minutes_perm)+":"+str_seconds_perm+"."
-    
+            message = "To run "+str(distance)+" "+unit+" in "+inputs+" you need to run each kilometer in "+str(minutes_perk)+":"+str_seconds_perk+ \
+                      ", or each mile in "+str(minutes_perm)+":"+str_seconds_perm+"."
+
     if(string == "!vdot" or string == "!trainingpaces"):
         message = "A "+inputs+" "+str(distance)+" "+unit+" corresponds to a "+str(v_dot)+" VDOT."
     if(string == "!trainingpaces"):
@@ -310,7 +310,7 @@ def convert(time, distance, unit,inputs, string):
     return message
 
 def parse_distance_unit(distance):
-    match = re.match(r"(\d+)(\w*)", distance, re.I)
+    match = re.match(r"([-+]?\d*\.\d+|\d+)(\w*)", distance.replace(" ", ""), re.I)
     dist = 0
     unit = ""
     if match:
@@ -343,7 +343,7 @@ def aed(body,author):
         new_command = comment.replace("!add","")
         new_command = new_command.replace(add_command,"",1)
         new_command = new_command.lstrip()
-    
+
         #Stopping command responses that start with !
         if(add_command[0] == "!" or new_command[0] == "!"):
             reply = "That command cannot be added because it either has an extra ! in the command or the response starts with !\n\n The command is `!add new_command response."
@@ -357,7 +357,7 @@ def aed(body,author):
         #Actually adding the command
         command_list.append("!"+add_command)
         command_list.append(new_command)
-        write_out('command_list',command_list) 
+        write_out('command_list',command_list)
         reply = "Successfully added !"+add_command+"\n\n The new response is:\n\n"+temp
         return reply
 
@@ -391,11 +391,11 @@ def aed(body,author):
         if("!"+edit_command not in command_list):
             reply = "That command does not exist. Try !add instead."
             return reply
-            
+
         #Actually replacing the command
         command_index = command_list.index("!"+edit_command)
         #Easier to delete both old command and response and append the new ones
-        del command_list[command_index] 
+        del command_list[command_index]
         del command_list[command_index]
         command_list.append("!"+edit_command)
         command_list.append(new_command)
@@ -418,7 +418,7 @@ def help(body):
 #Paces based on VDOT
 def trainingpaces(v_dot):
     reply = ""
-    #input array, input string for labels 
+    #input array, input string for labels
     reply1 = pace_table(jd_paces[1:], jd_paces[0], v_dot, "Jack Daniels")
     #checking to make sure the no listed paces output isn't the response
     if(not reply1.count("There")):
