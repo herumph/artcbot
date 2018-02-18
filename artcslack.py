@@ -18,12 +18,13 @@ built_in = ["add","edit","delete","vdot","planner","pacing","splits",\
 built_in = ["!"+i for i in built_in]
 
 def errorMessage(user):
-    errors = ["Something went wrong :rip_party:",
-            "Oh no you killed artcbot",
-            "Your command is bad and you should feel bad",
-            "artcbot is taking a vacation :palm_tree:",
-            "Here lies artcbot. Viciously murdered by "+user+" :rip:"]
+    errors = ["Something went wrong :party_rip:",
+                "Oh no you killed artcbot",
+                "Your command is bad and you should feel bad",
+                "artcbot is taking a vacation :palm_tree:",
+                "Here lies artcbot. Viciously murdered by <@"+user+"> :rip:"]
     return errors[random.randint(0, len(errors)-1)]
+
 
 def sendMessage(user, channel, message):
     sc.api_call(
@@ -32,7 +33,8 @@ def sendMessage(user, channel, message):
         icon_emoji = ":robot_face:",
         channel=channel,
         link_names=1,
-        text= '<@'+user +'>' +' '+ message)
+
+        text= '<@'+user +'>' +' '+ message)      
 
 def getChannel(event):
     return event['channel']
@@ -42,6 +44,7 @@ def getUser(event):
 
 #getting slack text events and responding
 sc.rtm_connect()
+#sc.api_call("channel_list", token = slack_token)
 while True:
     now = datetime.now()
     new_events = sc.rtm_read()
@@ -65,36 +68,3 @@ while True:
                 except:
                     sendMessage(user, channel, errorMessage(user))
     time.sleep(1)
-
-
-###########################
-#not used (possibly broken)
-def parseDistance(orig):
-    dist = 0
-    unit = 'na'
-
-    if (type(orig) == str):
-        ary = orig.split()
-    else:
-        ary = orig
-
-    if (len(ary) == 1):
-        m = re.match(r'([0-9.]+)([A-Za-z]+)', ary[0])
-        if m:
-            dist = float(m.group(1))
-            unit = m.group(2)
-    elif (len(ary) == 2):
-        dist = float(ary[0])
-        unit = ary[1]
-
-    if (unit.startswith(('km', 'ki')) or unit == 'k'):
-        unit = 'kilometer(s)'
-    elif (unit.startswith('mi') or unit == 'm'):
-        unit = 'mile(s)'
-
-    return [dist, unit]
-
-
-
-
-
