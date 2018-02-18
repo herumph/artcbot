@@ -17,6 +17,14 @@ built_in = ["add","edit","delete","vdot","planner","pacing","splits",\
 #I'm lazy
 built_in = ["!"+i for i in built_in]
 
+def errorMessage(user):
+    errors = ["Something went wrong :rip_party:",
+            "Oh no you killed artcbot",
+            "Your command is bad and you should feel bad",
+            "artcbot is taking a vacation :palm_tree:",
+            "Here lies artcbot. Viciously murdered by "+user+" :rip:"]
+    return errors[random.randint(0, len(errors)-1)]
+
 def sendMessage(user, channel, message):
     sc.api_call(
         "chat.postMessage",
@@ -24,7 +32,7 @@ def sendMessage(user, channel, message):
         icon_emoji = ":robot_face:",
         channel=channel,
         link_names=1,
-        text= '<@'+user +'>' +' '+ message)      
+        text= '<@'+user +'>' +' '+ message)
 
 def getChannel(event):
     return event['channel']
@@ -51,9 +59,13 @@ while True:
             if(len(command) > 0 or len(function) > 0):
                 user = getUser(events)
                 #sending user id(s) as contributor(s)
-                message = artcbot.call_bot(message, user, ['U4Z02CNN6'])
-                if(len(message) > 1): sendMessage(user, channel, message)
+                try:
+                    message = artcbot.call_bot(message, user, ['U4Z02CNN6'])
+                    if(len(message) > 1): sendMessage(user, channel, message)
+                except:
+                    sendMessage(user, channel, errorMessage(user))
     time.sleep(1)
+
 
 ###########################
 #not used (possibly broken)
@@ -81,3 +93,8 @@ def parseDistance(orig):
         unit = 'mile(s)'
 
     return [dist, unit]
+
+
+
+
+
