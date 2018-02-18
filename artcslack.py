@@ -23,7 +23,7 @@ def errorMessage(user):
             "Your command is bad and you should feel bad",
             "artcbot is taking a vacation :palm_tree:",
             "Here lies artcbot. Viciously murdered by "+user+" :rip:"]
-    return errors(random.randint(0, len(errors)-1))
+    return errors[random.randint(0, len(errors)-1)]
 
 def sendMessage(user, channel, message):
     sc.api_call(
