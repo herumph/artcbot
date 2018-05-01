@@ -62,7 +62,7 @@ def main():
         else:
             urls.append('1')
 
-    # writing out to csv
+    # writing out to txt
     with open ("raceResults.txt", "w") as f:
             for i in range(0,len(authors)):
                 f.write(authors[i]+"|"+times[i]+"|"+urls[i]+'\n')
