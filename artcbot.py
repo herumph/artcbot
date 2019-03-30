@@ -1,16 +1,17 @@
-#ARTCbot. Responds to ! commands
-#To do list:
-#1 - Paces in km and miles.
-#2 - Paces from other places. BT, etc.
-#3 - Make built_in a read in list so it only has to be maintained in one spot.
+# ARTCbot. Responds to ! commands
+# To do list:
+# 1 - Paces in km and miles.
+# 2 - Paces from other places. BT, etc.
+# 3 - Make built_in a read in list so it only has to be maintained in one spot.
 
 import codecs
 import re
 from datetime import datetime, timedelta
 from math import exp
 import statistics as stats
+import pandas as pd
 
-#Functions to read and write files into arrays.
+# Functions to read and write files into arrays.
 def get_array(input_string):
     with open("textfiles/"+input_string+".txt","r") as f:
         input_array = f.readlines()
@@ -28,33 +29,32 @@ def get_races():
         read_in = f.readlines()
     read_in = [x.strip("\n") for x in read_in]
     read_in = [i.split(';') for i in read_in]
-    #trimming header out
+    # trimming header out
     read_in = read_in[1:]
-    #read_in = [i for sublist in read_in for i in sublist]
     return(read_in)
 
-#Fetching arrays
+# Fetching arrays
 command_list = get_array("command_list")
 jd_paces = get_array("jd_paces")
 pf_paces = get_array("pf_paces")
 han_paces = get_array("han_paces")
-#Defining built in commands
-built_in = ["add","edit","delete","vdot","planner","pacing","splits", \
-            "convertpace","convertdistance","trainingpaces","acute","upcoming"]
+# Defining built in commands
+built_in = get_array("built_in")
+print(built_in)
 
-#getting pace information, first element are the labels
+# getting pace information, first element are the labels
 jd_paces = [i.split(',') for i in jd_paces]
 pf_paces = [i.split(',') for i in pf_paces]
 han_paces = [i.split(',') for i in han_paces]
 
-#Defining VDOT ranges.
+# Defining VDOT ranges.
 vdot_range=[30.0,85.0]
 
-#Big mess of a function to actually respond to commands
+# Big mess of a function to actually respond to commands
 def call_bot(body, author, contributors):
     reply=""
 
-    #add/edit/delete commands
+    # add/edit/delete commands
     if(body.count("!add") or body.count("!delete") or body.count("!edit")):
         if(str(author) not in contributors):
             reply += "Sorry, you are not allowed to edit commands."
@@ -63,19 +63,19 @@ def call_bot(body, author, contributors):
             reply += aed(body,author)
             return reply
 
-    #Help
+    # Help
     if(body.count("!help")):
         reply += help(body)
         return reply
 
-    #User commands
+    # User commands
     common = list(set(body).intersection(command_list))
     if(len(common) > 0 and common.count("!help") < 1):
         for i in range(0,len(common)):
             command_index = command_list.index(common[i])
             reply += "\n\n"+codecs.decode(command_list[command_index+1], 'unicode_escape')
 
-    #Distance conversions
+    # Distance conversions
     if(body.count("!convertdistance")):
         indices = [i for i, x in enumerate(body) if x == "!convertdistance"]
         for i in indices:
@@ -84,7 +84,7 @@ def call_bot(body, author, contributors):
             distance = float(distance)
             reply += "\n\n"+convert(1, distance, unit, 1,"!convertdistance")
 
-    #Converting paces
+    # Converting paces
     if(body.count("!convertpace")):
         indices = [i for i, x in enumerate(body) if x == "!convertpace"]
         for i in indices:
@@ -92,7 +92,7 @@ def call_bot(body, author, contributors):
             time = get_time(body[i+1])
             reply += "\n\n"+convert(time, 1, unit, body[i+1], "!convertpace")
 
-    #Track split calculator
+    # Track split calculator
     if(body.count("!splits")):
         indices = [i for i, x in enumerate(body) if x == "!splits"]
         for i in indices:
@@ -100,13 +100,13 @@ def call_bot(body, author, contributors):
             time = get_time(body[i+1])
             reply += "\n\n"+convert(time, 1, unit, body[i+1], "!splits")
 
-    #Training plan calculator
+    # Training plan calculator
     if(body.count("!planner")):
         indices = [i for i, x in enumerate(body) if x == "!planner"]
         for i in indices:
             reply += "\n\n"+planner(body[i+1],body[i+2])
 
-    #Race pace calculator
+    # Race pace calculator
     if(body.count("!pacing")):
         indices = [i for i, x in enumerate(body) if x == "!pacing"]
         for i in indices:
@@ -118,7 +118,7 @@ def call_bot(body, author, contributors):
                 unit = get_unit(label.lower())
             reply += "\n\n"+convert(time, distance, unit, body[i+1], "!pacing")
 
-    #VDOT calculator
+    # VDOT calculator
     if(body.count("!vdot")):
         indices = [i for i, x in enumerate(body) if x == "!vdot"]
         for i in indices:
@@ -127,7 +127,7 @@ def call_bot(body, author, contributors):
             unit = get_unit(body[i+3].lower())
             reply += "\n\n"+convert(time, distance, unit, body[i+1], "!vdot")
 
-    #Training paces calculator
+    # Training paces calculator
     if(body.count("!trainingpaces")):
         indices = [i for i, x in enumerate(body) if x == "!trainingpaces"]
         for i in indices:
@@ -138,7 +138,7 @@ def call_bot(body, author, contributors):
                     distance = float(body[i+2])
                     v_dot = convert(time, distance, unit, body[i+1], "!trainingpaces")
                     reply += v_dot[0]
-                    #Rounding
+                    # Rounding
                     v_dot = round(v_dot[1],0)
                 else:
                     v_dot = round(float(body[i+1]),0)
@@ -146,7 +146,7 @@ def call_bot(body, author, contributors):
                 v_dot = round(float(body[i+1]),0)
             reply += trainingpaces(v_dot)
 
-    #acute to chronic ratio
+    # acute to chronic ratio
     if(body.count("!acute")):
         indices = [i for i, x in enumerate(body) if x == "!acute"]
         for i in indices:
@@ -155,28 +155,28 @@ def call_bot(body, author, contributors):
             ratio = round(last_four[-1]/average,2)
             reply += str(ratio)
 
-    #upcoming races
+    # upcoming races
     if(body.count("!upcoming")):
         indices = [i for i, x in enumerate(body) if x == "!upcoming"]
-        #reading in the race csv file
+        # reading in the race csv file
         race_info = get_races()
         time = datetime.now()
         for i in indices:
             if(len(body) > 1):
-                #specific races for a user
+                # specific races for a user
                 if(body[i+1] == 'user'):
                     user = body[i+2]
                     user_races = [j for j in race_info if(j[0].lower() == user.lower() and \
                                                           j[3] != '' and j[3] != 'Date(M/D/Y)' and \
                                                           strip_time(j[3])-time >= timedelta(seconds=1))]
-                    #reddit table formatting
+                    # reddit table formatting
                     if(len(user_races) > 0):
                         reply += 'Upcoming races for '+user+':\n\n'
                         reply += race_table(user_races, user)
-                    #responding if there are no races upcoming
+                    # responding if there are no races upcoming
                     else:
                         reply += 'No upcoming races for '+user+'.\n\n'
-                        #upcoming races in the next week
+                        # upcoming races in the next week
                 else:
                     user_races = [j for j in race_info if(j[3] != '' and \
                                                           j[3] != 'Date(M/D/Y)' and \
@@ -191,9 +191,27 @@ def call_bot(body, author, contributors):
                 reply += 'Upcoming races in the next week:\n\n'
                 reply += race_table(user_races,0)
 
+    # Pfitz HR zones
+    if(body.count("!hrzones")):
+        indices = [i for i, x in enumerate(body) if x == "!hrzones"]
+        for i in indices:
+            reply += "\n\n"+hrZones(float(body[i+1]), float(body[i+2]))
+
+    # poking to check bot status
+    if(body.count("!poke")):
+        return "BEEP BOOP!"
+
+    # temperature pace adjustments
+    if(body.count("!tempadjust")):
+        indices = [i for i, x in enumerate(body) if x == "!tempadjust"]
+        for i in indices:
+            time = get_time(body[i+1])
+            Combined = int(body[i+2]) + int(body[i+3])
+            reply += "\n\n"+Pace_Adjuster(Combined, time)
+
     return reply
 
-#accepting both mm/dd/yy and mm/dd/yyyy format
+# accepting both mm/dd/yy and mm/dd/yyyy format
 def strip_time(time):
     try:
         date = datetime.strptime(time, "%m/%d/%Y")
@@ -201,7 +219,7 @@ def strip_time(time):
         date = datetime.strptime(time, "%m/%d/%y")
     return date
 
-#creating reddit table of upcoming races
+# creating reddit table of upcoming races
 def race_table(races, user):
     if(user != 0):
         reply = "\nDate | Race | Distance\n"
@@ -217,17 +235,17 @@ def race_table(races, user):
 
     return reply
 
-#Return date to start training
+# Return date to start training
 def planner(date,time):
     formatting = date.split('/')
-    #Checking the date format
+    # Checking the date format
     if(len(formatting[0]) > 2 or len(formatting[1]) > 2 or len(formatting[2]) > 2):
         return "Your date is the wrong format. Please put your date in mm/dd/yy format."
     date = datetime.strptime(date, "%m/%d/%y")
     time_new = date - timedelta(weeks=int(time))
     return "For a "+time+" week plan, start training on "+str(time_new.month)+"/"+str(time_new.day)+"/"+str(time_new.year)+"."
 
-#Get the time from a comment and return seconds
+# Get the time from a comment and return seconds
 def get_time(time):
     time = time.split(':')
     if(len(time) < 3):
@@ -235,7 +253,7 @@ def get_time(time):
     elif(len(time) == 3):
         return float(time[0])*60.0+float(time[1])+float(time[2])/60.0
 
-#Time formatting function. Time given in minutes as a float.
+# Time formatting function. Time given in minutes as a float.
 def time_format(time):
     minutes = int(time % 100)
     seconds = int((time % 1)*60)
@@ -244,15 +262,15 @@ def time_format(time):
         str_seconds = "0"+str(seconds)
     return (minutes, str_seconds)
 
-#Calculating VDOT
-#Time given in minutes as a float, distance as a float in kilometers
+# Calculating VDOT
+# Time given in minutes as a float, distance as a float in kilometers
 def VDOT(time, distance):
     num = -4.6+0.182258*(distance*1e3/time)+0.000104*(distance*1e3/time)**2
     denom = 0.8+0.1894393*exp(-0.012778*time)+0.2989558*exp(-0.1932605*time)
     return round(num/denom,1)
 
-#Conversion function
-#Time in minutes as a float, distance as a float, unit as a string, inputs as a string, string is obvious.
+# Conversion function
+# Time in minutes as a float, distance as a float, unit as a string, inputs as a string, string is obvious.
 def convert(time, distance, unit,inputs, string):
     if(unit == "mile(s)"):
         distance_conversion = str(round(distance*1.60934,1))
@@ -266,7 +284,7 @@ def convert(time, distance, unit,inputs, string):
         minutes_perk, str_seconds_perk = time_format(split_perk)
         v_dot = VDOT(time,float(distance_conversion))
 
-        #Checking command
+        # Checking command
         if(string == "!convertdistance"):
             message = str(distance)+" miles is "+distance_conversion+" kilometers."
         if(string == "!convertpace"):
@@ -289,7 +307,7 @@ def convert(time, distance, unit,inputs, string):
         minutes_perm, str_seconds_perm = time_format(split_perm)
         v_dot = VDOT(time,distance)
 
-        #Checking command
+        # Checking command
         if(string == "!convertdistance"):
             message = str(distance)+" kilometers is "+distance_conversion+" miles."
         if(string == "!convertpace"):
@@ -321,52 +339,52 @@ def parse_distance_unit(distance):
             unit = items[1]
     return (dist, unit)
 
-#Add/Edit/Delete user commands function
+# Add/Edit/Delete user commands function
 def aed(body,author):
-    #Adding commands
+    # Adding commands
     if(body.count("!add")):
         index = body.index("!add")
         add_command = body[index+1]
 
-        #Searching if command already exists.
+        # Searching if command already exists.
         if("!"+add_command in command_list):
             reply = ("The command !"+add_command+" already exists. Please try !edit instead.")
             return reply
 
-        #Stopping people from overwriting built in commands
+        # Stopping people from overwriting built in commands
         if(add_command in built_in):
             reply = ("That command cannot be added as it's built into my programming. Please try a different name.")
             return reply
 
-        #Taking the rest of the comment as the new command and stripping it downs
+        # Taking the rest of the comment as the new command and stripping it downs
         comment = ' '.join(body)
         new_command = comment.replace("!add","")
         new_command = new_command.replace(add_command,"",1)
         new_command = new_command.lstrip()
 
-        #Stopping command responses that start with !
+        # Stopping command responses that start with !
         if(add_command[0] == "!" or new_command[0] == "!"):
             reply = "That command cannot be added because it either has an extra ! in the command or the response starts with !\n\n The command is `!add new_command response."
             return reply
 
-        #Human friendly version of the edit
+        # Human friendly version of the edit
         temp = new_command
         new_command = new_command.splitlines()
-        #Doing fancy shit to make the commands work
+        # Doing fancy shit to make the commands work
         new_command = r'\n'.join(map(str, new_command))
-        #Actually adding the command
+        # Actually adding the command
         command_list.append("!"+add_command)
         command_list.append(new_command)
         write_out('command_list',command_list)
         reply = "Successfully added !"+add_command+"\n\n The new response is:\n\n"+temp
         return reply
 
-    #Deleting commands
+    # Deleting commands
     elif(body.count("!delete")):
         index = body.index("!delete")
         delete_command = body[index+1]
         command_index = command_list.index("!"+delete_command)
-        #Actually deleting command
+        # Actually deleting command
         del command_list[command_index]
         del command_list[command_index]
         write_out('command_list',command_list)
@@ -374,27 +392,27 @@ def aed(body,author):
         return reply
 
     elif(body.count("!edit")):
-        #Editing commands
+        # Editing commands
         index = body.index("!edit")
         edit_command = body[index+1]
-        #Taking the rest of the comment as the new command and stripping it down
+        # Taking the rest of the comment as the new command and stripping it down
         comment = ' '.join(body)
         new_command = comment.replace("!edit","")
         new_command = new_command.replace(edit_command,"",1)
         new_command = new_command.lstrip()
-        #Human friendly version of the edit
+        # Human friendly version of the edit
         temp = new_command
         new_command = new_command.splitlines()
-        #Doing fancy shit to make the commands work
+        # Doing fancy shit to make the commands work
         new_command = r'\n'.join(map(str, new_command))
-        #Making sure the command exists
+        # Making sure the command exists
         if("!"+edit_command not in command_list):
             reply = "That command does not exist. Try !add instead."
             return reply
 
-        #Actually replacing the command
+        # Actually replacing the command
         command_index = command_list.index("!"+edit_command)
-        #Easier to delete both old command and response and append the new ones
+        # Easier to delete both old command and response and append the new ones
         del command_list[command_index]
         del command_list[command_index]
         command_list.append("!"+edit_command)
@@ -403,9 +421,9 @@ def aed(body,author):
         reply = "Successfully edited !"+edit_command+"\n\n The new response is:\n\n"+temp
         return reply
 
-#Responding to help commands
+# Responding to help commands
 def help(body):
-    #Having to convert back from raw string
+    # Having to convert back from raw string
     index = command_list.index("!help")
     reply = codecs.decode(command_list[index+1], 'unicode_escape')
     reply += "\n\n **Community made commands and quick links are:** \n\n"
@@ -415,12 +433,12 @@ def help(body):
     reply += "\n\n**I can reply to multiple commands at a time, so don't be picky.**"
     return reply
 
-#Paces based on VDOT
+# Paces based on VDOT
 def trainingpaces(v_dot):
     reply = ""
-    #input array, input string for labels
+    # input array, input string for labels
     reply1 = pace_table(jd_paces[1:], jd_paces[0], v_dot, "Jack Daniels")
-    #checking to make sure the no listed paces output isn't the response
+    # checking to make sure the no listed paces output isn't the response
     if(not reply1.count("There")):
         reply += "\n\n For a "+str(v_dot)+" VDOT here are training paces from popular books."
         reply += reply1
@@ -430,7 +448,7 @@ def trainingpaces(v_dot):
         reply += reply1
     return reply
 
-#Returning a reddit formatted table for an input vdot
+# Returning a reddit formatted table for an input vdot
 def pace_table(input_array, input_string, v_dot, source):
     reply = ""
     for i in range(0,len(input_array)-1,1):
@@ -458,10 +476,57 @@ def make_table(input_array, input_string, source, index):
         reply += input_array[index][j]+" | "
     return reply
 
-#stealing what tapin did for the slack version
+# stealing what tapin did for the slack version
 def get_unit(unit):
     if (unit.startswith(('km', 'ki')) or unit == 'k'):
         return 'kilometer(s)'
     elif (unit.startswith('mi') or unit == 'm'):
         return 'mile(s)'
     return
+
+# HR zones
+def hrZones(restHR, maxHR):
+    hrr = maxHR - restHR
+    # input handling
+    if (hrr < 0):
+        return "Your resting heart rate cannot be less than your max."
+
+    # defing hrr and mhr zones
+    # recovery (1 zone), ga, lr, mp, tempo, vo2
+    hrrZones = [0.70, 0.61, 0.75, 0.65, 0.78, 0.73, 0.84, 0.77, 0.88, 0.91, 0.96]
+    mrZones = [0.76, 0.70, 0.81, 0.74, 0.84, 0.79, 0.88, 0.82, 0.91, 0.93, 0.98]
+    zone = ["Recovery", "General Aerobic", "Long Runs", "Marathon Pace", "Tempo Runs", "VO2 (5k)"]
+
+    # getting hr for each of the zones
+    reply = "Heart Rate Zone | Max Heart Rate | Heart Rate Reserve\n"
+    i = 0
+    while(i < len(hrrZones)):
+        if(i != 0):
+            reply += zone[int((i+1)/2)] + " | " + str(int(maxHR*mrZones[i])) + "-" + str(int(maxHR*mrZones[i+1])) + " | " + \
+                str(int(hrr*hrrZones[i]+restHR)) + "-" + str(int(hrr*hrrZones[i+1]+restHR)) + "\n"
+            i += 2
+        else:
+            reply += zone[int(i/2)] + " | " + "<" + str(int(maxHR*mrZones[i],))+ " | <" + str(int(hrr*hrrZones[i]+restHR)) + "\n"
+            i += 1
+
+    return reply
+
+# temperature adjustments based on tempature and dewpoint, from Elijah
+def Pace_Adjuster(Combined, Pace_in_Seconds):
+    Temp_Table = pd.read_csv('textfiles/tempTable.txt')
+    for index,row in Temp_Table.iterrows():
+        if Combined > row['Low_Combined'] and Combined <= row['High_Combined']:
+            Low_Converted = time_format(row['Low_Factor']*Pace_in_Seconds)
+            Low_Converted = str(Low_Converted[0])+":"+str(Low_Converted[1])
+            High_Converted = time_format(row['High_Factor']*Pace_in_Seconds)
+            High_Converted = str(High_Converted[0])+":"+str(High_Converted[1])
+            Pace_String = ("Low Side: " + Low_Converted +
+            " High Side: " + High_Converted)
+        elif Combined <= 100:
+            Converted = time_format(Pace_in_Seconds)
+            Converted = str(Converted[0])+":"+str(Converted[1])
+            Pace_String = ("Low Side: " + Converted +
+            " High Side: " + Converted)
+        elif Combined >= 180:
+            Pace_String =  "Please don't run hard outside if you can avoid it"
+    return Pace_String

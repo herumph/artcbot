@@ -1,0 +1,16 @@
+add
+edit
+delete
+vdot
+planner
+pacing
+splits
+hrzones
+convertpace
+convertdistance
+trainingpaces
+acute
+upcoming
+hrzones
+tempadjust
+poke
